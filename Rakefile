@@ -462,7 +462,7 @@ file required[:sga_output] => required[:khmered_reads] do
   files = File.readlines("#{required[:khmered_reads]}").map{|n| n.chomp!}.compact
   left = files[0]
   right = files[1]
-  sga_cmd = "ruby sga.rb --verbose --left #{left} --right #{right} --output #{path}/sga/#{lcs}sga --cores #{threads}"
+  sga_cmd = "ruby #{CODEDIR}/sga.rb --verbose --left #{left} --right #{right} --output #{path}/sga/#{lcs}sga --cores #{threads}"
   puts sga_cmd
   `#{sga_cmd}`
 
@@ -673,6 +673,7 @@ end
 
 file required[:annotation_output] => required[:combined_assembly] do
   abort "ABORT: Something went wrong with #{required[:combined_assembly]} and the output file is empty!"  if File.size(required[:combined_assembly]) < 10
+  abort "stop here - not running RBUsearch anymore"
   puts "running RBUsearch to annotate transcripts..."
   if !File.exists?("#{path}/#{lcs}contigs.fasta")
     puts "removing short contigs"

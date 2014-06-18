@@ -406,12 +406,12 @@ file required[:soap_output] => required[:khmered_reads] do
 
   soap_cmd = "SOAPdenovo-Trans-31mer all -s #{required[:config]} -o #{path}/soap/#{lcs}soap -p #{threads}"
   puts soap_cmd
-  `#{soap_cmd}`
+  `#{soap_cmd}` unless File.exist? "#{path}/soap/#{lcs}soap.scafSeq"
 
   # run soap gapcloser on scafseq
   gapcloser_cmd = "#{gapcloser} -a #{path}/soap/#{lcs}soap.scafSeq -b soapdt.config -o #{path}/soap/#{lcs}soap.gapcloser.fasta" # GapCloser -a Ft_soap.scafSeq -b soapdt.config -o Ft_soap.filled.fasta -l 101
   puts gapcloser_cmd
-  `#{gapcloser_cmd}`
+  `#{gapcloser_cmd}` unless File.exist? "#{path}/soap/#{lcs}soap.gapcloser.fasta"
 
   # run sga gap filler on *.scafSeq
   pre_cmd =     "sga preprocess --phred64 -p 1 -o #{path}/soap/#{lcs}cleaned.fastq #{path}/#{lcs}.left.fastq #{path}/#{lcs}.right.fastq" 

@@ -1,4 +1,6 @@
 require 'bio'
+require 'pathname'
+CODEDIR = File.dirname(Pathname.new(__FILE__).realpath)
 
 required = {
   :input_reads => "raw_data",
@@ -79,14 +81,14 @@ file required[:quality] => required[:input_reads] do
   end
   
   quality_threads = threads > 5 ? 5 : threads # limits to 5 threads due to io
-  `#{fastqc_path} --kmers 5 --threads #{quality_threads} --outdir #{path}/fastqc_output #{files}` if files.length>0
+  `#{fastqc_path} --kmers 5 --threads #{quality_threads} --outdir #{path}/fastqc_output #{files}` if files.length > 0
   
   fastqc_summary = Hash.new
   Dir.chdir("#{path}/fastqc_output") do
     Dir["*fastqc"].each do |fastqc_dir|
       Dir.chdir("#{fastqc_dir}") do
         File.open("fastqc_data.txt", "r").each_line do |line|
-          if line=~/Overrepresented\s+sequences\s+(\S+)/
+          if line =~ /Overrepresented\s+sequences\s+(\S+)/
             fastqc_summary[fastqc_dir] = $1
           end
         end
@@ -108,12 +110,13 @@ file required[:trimmed_reads] => required[:input_reads] do
   # TODO add aligning reads against chloroplast and rRNA datasets to remove these reads
   puts "creating trimmed reads..."
   trim_threads = threads > 4 ? 4 : threads
-  trim_batch_cmd = "ruby trim-batch.rb "
+  trim_batch_cmd = "ruby #{CODEDIR}/trim-batch.rb "
   trim_batch_cmd << "--jar #{trimmomatic_path} "
   trim_batch_cmd << "--pairedfile #{required[:input_reads]} "
   #trim_batch_cmd << "--singlefile #{required[:single_input_reads]} "
   trim_batch_cmd << "--threads #{trim_threads} " # due to io limitations this is capped at 4
   trim_batch_cmd << "--quality 15 "
+  trim_batch_cmd << "--phred 64"
   # puts trim_batch_cmd
   `#{trim_batch_cmd}`
   list_of_trimmed_reads = ""
@@ -221,7 +224,7 @@ file required[:corrected_reads] => required[:trimmed_reads] do
   count=0
   output_directories=[]
 
-  write_hammer_to_tmp = true
+  write_hammer_to_tmp = false
   if write_hammer_to_tmp
     node=`hostname`
     if node=~/node9/
@@ -368,7 +371,7 @@ file required[:khmered_reads] => required[:corrected_reads] do
   `#{rm_cmd}`
   
   # deinterleave the output from adds left.fastq and right.fastq to the end of the filename
-  cmd = "ruby smart_deinterleave.rb -f #{path}/#{lcs}.khmered.fastq -o #{path}/#{lcs}" 
+  cmd = "ruby #{CODEDIR}/smart_deinterleave.rb -f #{path}/#{lcs}.khmered.fastq -o #{path}/#{lcs}" 
   puts cmd
   `#{cmd}`
 
@@ -405,7 +408,7 @@ file required[:soap_output] => required[:khmered_reads] do
     `#{mkdir_cmd}`
   end
 
-  soap_cmd = "SOAPdenovo-Trans-127mer all -s #{required[:config]} -o #{path}/soap/#{lcs}soap -p #{threads}"
+  soap_cmd = "SOAPdenovo-Trans-31mer all -s #{required[:config]} -o #{path}/soap/#{lcs}soap -p #{threads}"
   puts soap_cmd
   `#{soap_cmd}`
 
@@ -603,22 +606,22 @@ file required[:expression_output] => required[:annotation_output] do
     line.chomp!
     filename=File.basename(line)
     filepath=File.dirname(line)
-    if filename=~/^t\..*(.)_(.)_R1\.fastq/ # $1 = replicate, $2 = section
+    if filename=~/^t\..*C([a-z])(0-9)_l1.raw_1\.fq/ # $1 = replicate, $2 = section
       replicate = $1
       section = $2
-      key = "#{section}-#{repliace}".to_sym
+      key = "#{section}-#{replicate}".to_sym
       left[key] = [] if !left.has_key?(key)
       left[key] << line
-    elsif filename=~/^t\..*(.)_(.)_R2\.fastq/
+    elsif filename=~/^t\..*C([a-z])(0-9)_l1.raw_2\.fq/
       replicate = $1
       section = $2
-      key = "#{section}-#{repliace}".to_sym
+      key = "#{section}-#{replicate}".to_sym
       right[key] = [] if !right.has_key?(key)
       right[key] << line
-    elsif filename=~/^tU\..*(.)_(.)_R1\.fastq/
+    elsif filename=~/^tU\..*C([a-z])(0-9)_l1.raw_1\.fq/
       replicate = $1
       section = $2
-      key = "#{section}-#{repliace}".to_sym
+      key = "#{section}-#{replicate}".to_sym
       single[key] = [] if !single.has_key?(key)
       single[key] << line
     end

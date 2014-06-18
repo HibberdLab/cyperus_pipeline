@@ -239,7 +239,7 @@ file required[:corrected_reads] => required[:trimmed_reads] do
   File.open("#{required[:yaml]}", "r").each_line do |dataset_line|
     puts "running hammer on #{dataset_line}"
     dataset_line.chomp!
-    cmd = "python #{hammer_path} --dataset #{dataset_line} --only-error-correction --disable-gzip-output -m #{memory} -t #{threads} -o #{hammer_out_path}/output_#{count}.spades"
+    cmd = "#{hammer_path} --dataset #{dataset_line} --only-error-correction --disable-gzip-output -m #{memory} -t #{threads} -o #{hammer_out_path}/output_#{count}.spades"
     output_directories << "#{hammer_out_path}/output_#{count}.spades"
     if !File.exists?("#{hammer_out_path}/output_#{count}.spades")
       puts cmd

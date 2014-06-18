@@ -19,17 +19,17 @@ required = {
   :bowtie_index => "bowtie_index"
 }
 
-threads = 22
-memory = 92
+threads = 12
+memory = 100
 maximum_files_to_hammer_at_a_time = 5
-fastqc_path = "/applications/fastqc_v0.10.1/FastQC/fastqc"
-hammer_path = "~/apps/SPAdes-2.5.1-Linux/bin/spades.py"
-trimmomatic_path = "/home/cmb211/apps/Trimmomatic-0.32/trimmomatic-0.32.jar"
-khmer_path = "/home/cmb211/.local/bin/normalize-by-median.py"
-protein_reference = "/home/cmb211/flaveria/at_p.faa"
-idba = "/home/cmb211/apps/idba_tran-1.0.13/bin/idba_tran"
-cd_hit_est = "/home/cmb211/apps/cd-hit-v4.6.1-2012-08-27/cd-hit-est"
-gapcloser = "/home/cmb211/bin/GapCloser"
+fastqc_path = "fastqc"
+hammer_path = "spades.py"
+trimmomatic_path = "~/apps/Trimmomatic-0.32/trimmomatic-0.32.jar"
+khmer_path = "normalize-by-median.py"
+protein_reference = "/home/rds45/big_space/genomes/Osativa/Osativa_204_protein.fa"
+idba = "~/apps/idba-1.1.1/bin/idba_tran"
+cd_hit_est = "cd-hit-est"
+gapcloser = "GapCloser"
 lcs = ""
 path = ""
 
@@ -39,7 +39,7 @@ task :input do
   File.open(required[:input_reads], "r").each_line do |line|
     line.chomp!
     if File.exists?("#{line}")
-      a << File.basename(line.gsub(".fastq", ""))
+      a << File.basename(line.gsub(".fq", ""))
       path = File.dirname(line)
     else
       abort "Can't find #{line}"
@@ -146,9 +146,9 @@ file required[:yaml] do # construct dataset.yaml file for bayeshammer input
     line.chomp!
     
     filename = File.basename(line)
-    if filename=~/^t\..*R1.*/
+    if filename=~/^t\..*_1.*/
       hash[:left] << line
-    elsif filename=~/^t\..*R2.*/
+    elsif filename=~/^t\..*_2.*/
       hash[:right] << line
     else
       hash[:single] << line

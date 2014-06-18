@@ -414,18 +414,18 @@ file required[:soap_output] => required[:khmered_reads] do
   `#{gapcloser_cmd}` unless File.exist? "#{path}/soap/#{lcs}soap.gapcloser.fasta"
 
   # run sga gap filler on *.scafSeq
-  pre_cmd =     "sga preprocess --phred64 -p 1 -o #{path}/soap/#{lcs}cleaned.fastq #{path}/#{lcs}.left.fastq #{path}/#{lcs}.right.fastq" 
-  index_cmd =   "sga index -p #{path}/soap/#{lcs} -t #{threads} -a ropebwt #{path}/soap/#{lcs}cleaned.fastq"
+  pre_cmd = "sga preprocess --phred64 -p 1 -o #{path}/soap/#{lcs}cleaned.fastq #{path}/#{lcs}.left.fastq #{path}/#{lcs}.right.fastq" 
+  index_cmd = "sga index -p #{path}/soap/#{lcs} -t #{threads} -a ropebwt #{path}/soap/#{lcs}cleaned.fastq"
   gapfill_cmd = "sga gapfill -p #{path}/soap/#{lcs} -e 47 -x 1 -t #{threads} -o #{path}/soap/#{lcs}soap.gapfill.fasta #{path}/soap/#{lcs}soap.gapcloser.fasta"
 
   puts pre_cmd
-  `#{pre_cmd}`
+  `#{pre_cmd}` unless File.exist? "#{path}/soap/#{lcs}cleaned.fastq"
 
   puts index_cmd
-  `#{index_cmd}`
+  `#{index_cmd}` unless File.exist? "#{path}/soap/#{lcs}.rbwt"
 
   puts gapfill_cmd
-  `#{gapfill_cmd}`
+  `#{gapfill_cmd}` unless File.exist? #{path}/soap/#{lcs}soap.gapfill.fasta"
 
   # make a histogram of the lengths of the contigs in the output assembly file
   #

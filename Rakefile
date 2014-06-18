@@ -149,9 +149,9 @@ file required[:yaml] do # construct dataset.yaml file for bayeshammer input
     line.chomp!
     
     filename = File.basename(line)
-    if filename=~/^t\..*_1.*/
+    if filename=~/^t\..*raw_1.*/
       hash[:left] << line
-    elsif filename=~/^t\..*_2.*/
+    elsif filename=~/^t\..*raw_2.*/
       hash[:right] << line
     else
       hash[:single] << line
@@ -261,7 +261,7 @@ file required[:corrected_reads] => required[:trimmed_reads] do
         fastq_files = Dir["*fastq"]
         abort "Something went wrong with BayesHammer and no corrected reads were created in #{dir}" if fastq_files.length ==0
         fastq_files.each do |fastq|
-          if fastq =~ /t\..*R[12].*fastq/
+          if fastq =~ /t\..*raw_[12].*fastq/
             paired << "#{dir}/corrected/#{fastq}" # #{path}/
           elsif fastq =~ /tU.*fastq/
             single << "#{dir}/corrected/#{fastq}" # #{path}/
@@ -309,10 +309,6 @@ file required[:khmered_reads] => required[:corrected_reads] do
       `#{cmd}`
     end
     interleaved_files << "#{interleave_out}/#{base}.in"
-    # rm1 = "rm #{File.basename(left)}"
-    # rm2 = "rm #{File.basename(right)}"
-    # `#{rm1}`
-    # `#{rm2}`
   end
 
   # settings for khmer
@@ -327,12 +323,12 @@ file required[:khmered_reads] => required[:corrected_reads] do
   interleaved_files.each do |file|
     Dir.chdir(File.dirname(file)) do
       if first
-        cmd = "#{khmer_path} -p -k #{kmer_size} -C #{cutoff} -N #{n} -x #{x} --savehash table.kh #{file}"
+        cmd = "#{khmer_path} -p -k #{kmer_size} -C #{cutoff} -N #{n} -x #{x} --savetable table.kh #{file}"
         puts "#{cmd}"
         puts `#{cmd}`
         first = false
       else
-        cmd = "#{khmer_path} -p -k #{kmer_size} -C #{cutoff} -N #{n} -x #{x} --loadhash table.kh --savehash table2.kh #{file}"
+        cmd = "#{khmer_path} -p -k #{kmer_size} -C #{cutoff} -N #{n} -x #{x} --loadtable table.kh --savehash table2.kh #{file}"
         puts "#{cmd}"
         puts `#{cmd}`
         `mv table2.kh table.kh`
@@ -362,7 +358,7 @@ file required[:khmered_reads] => required[:corrected_reads] do
 
   # run khmer on all the single reads
   Dir.chdir(path) do
-    cmd = "#{khmer_path} -k #{kmer_size} -N #{n} -x #{x} #{path}/#{lcs}.single.fastq"
+    cmd = "#{khmer_path} -k #{kmer_size} -N #{n} -x #{x} --loadtable table.kh #{path}/#{lcs}.single.fastq"
     puts "#{cmd}"
     puts `#{cmd}`
   end
@@ -418,7 +414,7 @@ file required[:soap_output] => required[:khmered_reads] do
   `#{gapcloser_cmd}`
 
   # run sga gap filler on *.scafSeq
-  pre_cmd =     "sga preprocess -p 1 -o #{path}/soap/#{lcs}cleaned.fastq #{path}/#{lcs}.left.fastq #{path}/#{lcs}.right.fastq" 
+  pre_cmd =     "sga preprocess --phred64 -p 1 -o #{path}/soap/#{lcs}cleaned.fastq #{path}/#{lcs}.left.fastq #{path}/#{lcs}.right.fastq" 
   index_cmd =   "sga index -p #{path}/soap/#{lcs} -t #{threads} -a ropebwt #{path}/soap/#{lcs}cleaned.fastq"
   gapfill_cmd = "sga gapfill -p #{path}/soap/#{lcs} -e 47 -x 1 -t #{threads} -o #{path}/soap/#{lcs}soap.gapfill.fasta #{path}/soap/#{lcs}soap.gapcloser.fasta"
 
